@@ -143,14 +143,10 @@ static void timer_callback(struct timer_list *t)
 {
     struct monitored_entry *entry, *tmp;
 
-    printk(KERN_INFO "[container_monitor] Timer fired\n");
 
     mutex_lock(&monitored_lock);
-    printk(KERN_INFO "[container_monitor] List empty: %d\n", list_empty(&monitored_list));
     list_for_each_entry_safe(entry, tmp, &monitored_list, list) {
         long rss = get_rss_bytes(entry->pid);
-        printk(KERN_INFO "[container_monitor] Checking pid=%d rss=%ld soft=%lu hard=%lu\n",
-               entry->pid, rss, entry->soft_limit_bytes, entry->hard_limit_bytes);
 
         if (rss < 0) {
             list_del(&entry->list);

@@ -421,37 +421,31 @@ int child_fn(void *arg)
 {
     child_config_t *cfg = (child_config_t *)arg;
 
-    fprintf(stderr, "child_fn: started, command=%s\n", cfg->command);
 
     if (sethostname(cfg->id, strlen(cfg->id)) != 0) {
         perror("child_fn: sethostname");
         return 1;
     }
-    fprintf(stderr, "child_fn: sethostname OK\n");
 
     if (mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL) != 0) {
         perror("child_fn: mount private");
         return 1;
     }
-    fprintf(stderr, "child_fn: mount private OK\n");
 
     if (chroot(cfg->rootfs) != 0) {
         perror("child_fn: chroot");
         return 1;
     }
-    fprintf(stderr, "child_fn: chroot OK\n");
 
     if (chdir("/") != 0) {
         perror("child_fn: chdir");
         return 1;
     }
-    fprintf(stderr, "child_fn: chdir OK\n");
 
     if (mount("proc", "/proc", "proc", 0, NULL) != 0) {
         perror("child_fn: mount /proc");
         return 1;
     }
-    fprintf(stderr, "child_fn: mount proc OK\n");
 
     if (dup2(cfg->log_write_fd, STDOUT_FILENO) < 0) {
         perror("child_fn: dup2 stdout");
@@ -462,7 +456,6 @@ int child_fn(void *arg)
         return 1;
     }
     close(cfg->log_write_fd);
-    fprintf(stderr, "child_fn: dup2 OK\n");
 
     if (cfg->nice_value != 0) {
         if (setpriority(PRIO_PROCESS, 0, cfg->nice_value) != 0)
@@ -488,13 +481,11 @@ int child_fn(void *arg)
         return 1;
     }
 
-    fprintf(stderr, "child_fn: about to execv %s with %d args\n", exec_args[0], nargs);
-    fflush(stderr);
     execv(exec_args[0], exec_args);
     /* execv failed — write error manually since perror goes nowhere useful */
     char errbuf[128];
     snprintf(errbuf, sizeof(errbuf), "child_fn: execv failed: %s\n", strerror(errno));
-    write(STDERR_FILENO, errbuf, strlen(errbuf));
+    if (write(STDERR_FILENO, errbuf, strlen(errbuf)) < 0) { /* best effort */ }
     return 1;
 }
 
